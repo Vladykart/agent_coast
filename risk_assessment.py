@@ -26,13 +26,25 @@ def monte_carlo_simulation(
         simulated_revenue = (
             simulated_agents * simulated_calls * simulated_price * 30
         )  # Monthly revenue
+
+        # Calculate total cost per minute
+        total_cost_per_minute = sum([
+            config["service_costs"]["text_generation"]["input"]["cost_per_1k_tokens"] *
+            config["service_costs"]["text_generation"]["input"]["tokens_per_minute"] / 1000,
+            config["service_costs"]["text_generation"]["output"]["cost_per_1k_tokens"] *
+            config["service_costs"]["text_generation"]["output"]["tokens_per_minute"] / 1000,
+            config["service_costs"]["audio_recognition"]["deepgram_nova2"]["cost_per_minute"],
+            config["service_costs"]["audio_generation"]["11labs_scale"]["cost_per_1k_chars"] *
+            config["service_costs"]["audio_generation"]["11labs_scale"]["chars_per_minute"] / 1000
+        ])
+
         simulated_cost = (
             simulated_agents
             * simulated_calls
             * simulated_duration
-            * sum(config["service_costs"]["stt"].values())
+            * total_cost_per_minute
             * 30
-        )  # Simplified cost calculation
+        )  # Monthly cost
 
         simulated_profit = simulated_revenue - simulated_cost
         results.append(simulated_profit)

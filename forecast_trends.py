@@ -78,12 +78,8 @@ def render_forecast_trends(config, num_agents, calls_per_day, mean_call_duration
     st.plotly_chart(fig_market_share)
 
     # Customer Satisfaction Trend
-    satisfaction_data = config["market_data"]["historical_data"][
-        "our_market_share"
-    ]  # Using market share data as a proxy for satisfaction
-    satisfaction_dates = pd.to_datetime(
-        config["market_data"]["historical_data"]["dates"]
-    )
+    satisfaction_data = config["market_data"]["historical_data"]["our_market_share"]
+    satisfaction_dates = pd.to_datetime(config["market_data"]["historical_data"]["dates"])
 
     fig_satisfaction = px.line(
         x=satisfaction_dates, y=satisfaction_data, title="Customer Satisfaction Trend"
@@ -103,13 +99,26 @@ def render_forecast_trends(config, num_agents, calls_per_day, mean_call_duration
     for trend in trends:
         st.write(f"• {trend}")
 
-        # Key Performance Indicators (KPIs) Forecast
+    # Calculate total cost per minute
+    total_cost_per_minute = (
+        config["service_costs"]["text_generation"]["input"]["cost_per_1k_tokens"] *
+        config["service_costs"]["text_generation"]["input"]["tokens_per_minute"] / 1000 +
+        config["service_costs"]["text_generation"]["output"]["cost_per_1k_tokens"] *
+        config["service_costs"]["text_generation"]["output"]["tokens_per_minute"] / 1000 +
+        config["service_costs"]["audio_recognition"]["deepgram_nova2"]["cost_per_minute"] +
+        config["service_costs"]["audio_generation"]["11labs_scale"]["cost_per_1k_chars"] *
+        config["service_costs"]["audio_generation"]["11labs_scale"]["chars_per_minute"] / 1000
+    )
+
+    # Key Performance Indicators (KPIs) Forecast
     st.subheader("Key Performance Indicators (KPIs) Forecast")
     kpis = ['Revenue', 'Market Share', 'Customer Satisfaction', 'Cost per Call']
-    current_values = [calculate_revenue(config, num_agents, calls_per_day),
-                      config['market_data']['our_market_share'],
-                      config['market_data']['our_customer_satisfaction'],
-                      config['service_costs']['stt']['Deepgram'] * mean_call_duration]
+    current_values = [
+        calculate_revenue(config, num_agents, calls_per_day),
+        config['market_data']['our_market_share'],
+        config['market_data']['our_customer_satisfaction'],
+        total_cost_per_minute * mean_call_duration
+    ]
     forecast_values = [value * (1 + np.random.uniform(0.05, 0.15)) for value in current_values]
 
     kpi_df = pd.DataFrame({
@@ -121,11 +130,13 @@ def render_forecast_trends(config, num_agents, calls_per_day, mean_call_duration
 
     # Format the dataframe
     kpi_df['Current Value'] = kpi_df.apply(
-        lambda row: f'${row["Current Value"]:,.2f}' if row['KPI'] == 'Revenue' else f'{row["Current Value"]:.2f}',
-        axis=1)
+        lambda row: f'${row["Current Value"]:,.2f}' if row['KPI'] in ['Revenue', 'Cost per Call'] else f'{row["Current Value"]:.2f}',
+        axis=1
+    )
     kpi_df['Forecasted Value'] = kpi_df.apply(
-        lambda row: f'${row["Forecasted Value"]:,.2f}' if row['KPI'] == 'Revenue' else f'{row["Forecasted Value"]:.2f}',
-        axis=1)
+        lambda row: f'${row["Forecasted Value"]:,.2f}' if row['KPI'] in ['Revenue', 'Cost per Call'] else f'{row["Forecasted Value"]:.2f}',
+        axis=1
+    )
     kpi_df['Growth'] = kpi_df['Growth'].apply(lambda x: f'{x:.2f}%')
 
     st.table(kpi_df)

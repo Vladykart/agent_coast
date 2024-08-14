@@ -50,23 +50,21 @@ def calculate_revenue(config, num_agents, calls_per_day):
     return monthly_revenue
 
 
-def render_scalability_analysis(config, num_agents, calls_per_day, mean_call_duration, selected_services):
+def render_scalability_analysis(config, num_agents, calls_per_day, mean_call_duration, total_cost_per_minute):
     st.header("Scalability Analysis")
 
     scale_factors = [0.5, 1, 2, 5, 10]
     scale_data = []
     for factor in scale_factors:
         scaled_agents = int(num_agents * factor)
-        scaled_costs = calculate_costs(
-            config, scaled_agents, calls_per_day, mean_call_duration, selected_services
-        )
+        scaled_costs = scaled_agents * calls_per_day * mean_call_duration * total_cost_per_minute * 30  # Monthly cost
         scaled_revenue = calculate_revenue(config, scaled_agents, calls_per_day)
-        scaled_profit = scaled_revenue - scaled_costs["Monthly Cost ($)"].sum()
+        scaled_profit = scaled_revenue - scaled_costs
         scale_data.append(
             {
                 "Scale": f"{scaled_agents} Agents",
                 "Monthly Revenue": scaled_revenue,
-                "Monthly Cost": scaled_costs["Monthly Cost ($)"].sum(),
+                "Monthly Cost": scaled_costs,
                 "Monthly Profit": scaled_profit,
                 "Profit Margin": (
                     (scaled_profit / scaled_revenue) * 100 if scaled_revenue > 0 else 0
@@ -87,7 +85,7 @@ def render_scalability_analysis(config, num_agents, calls_per_day, mean_call_dur
 
     # Cost per call at different scales
     df_scale["Cost per Call"] = df_scale["Monthly Cost"] / (
-            scaled_agents * calls_per_day * 30
+            df_scale["Scale"].str.split().str[0].astype(int) * calls_per_day * 30
     )
     fig_cost_per_call = px.line(
         df_scale,
@@ -109,7 +107,7 @@ def render_scalability_analysis(config, num_agents, calls_per_day, mean_call_dur
 
     # Break-even analysis
     fixed_costs = 100000  # Assume some fixed costs
-    variable_costs = df_scale["Monthly Cost"] / (scaled_agents * calls_per_day * 30)
+    variable_costs = df_scale["Monthly Cost"] / (df_scale["Scale"].str.split().str[0].astype(int) * calls_per_day * 30)
     price_per_call = config["financial_metrics"]["price_per_call"]
     break_even_calls = fixed_costs / (price_per_call - variable_costs)
 
@@ -137,4 +135,3 @@ def render_scalability_analysis(config, num_agents, calls_per_day, mean_call_dur
     st.write(
         "5. Consider the trade-offs between profitability, efficiency, and risk when deciding on the optimal scale for operations."
     )
-
