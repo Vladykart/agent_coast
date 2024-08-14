@@ -14,6 +14,7 @@ from market_position import render_market_position
 from scalability_analysis import render_scalability_analysis
 from risk_assessment import render_risk_assessment
 from forecast_trends import render_forecast_trends
+from service_configuration import render_service_configuration
 
 # Initialize session state for configurations
 if "config" not in st.session_state:
@@ -195,7 +196,7 @@ st.sidebar.metric("Total Cost per Minute", f"${total_cost_per_minute:.4f}")
 st.title("LiveKit Voice Assistant Business Intelligence Dashboard")
 
 # Tabs for different modules
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "Financial Overview",
     "Operational Metrics",
     "Service Performance",
@@ -203,6 +204,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "Scalability Analysis",
     "Risk Assessment",
     "Forecast and Trends",
+    "Service Configuration",  # New tab
 ])
 
 # Render each module in its respective tab
@@ -228,3 +230,6 @@ with tab6:
 
 with tab7:
     render_forecast_trends(st.session_state.config, num_agents, calls_per_day, mean_call_duration)
+
+with tab8:
+    render_service_configuration(st.session_state.config)
