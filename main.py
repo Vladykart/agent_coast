@@ -232,4 +232,5 @@ with tab7:
     render_forecast_trends(st.session_state.config, num_agents, calls_per_day, mean_call_duration)
 
 with tab8:
-    render_service_configuration(st.session_state.config)
+    updated_config = render_service_configuration(st.session_state.config)
+    st.session_state.config = updated_config
